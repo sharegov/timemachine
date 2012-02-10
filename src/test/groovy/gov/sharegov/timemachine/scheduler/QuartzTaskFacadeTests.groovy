@@ -180,6 +180,19 @@ class QuartzTaskFacadeTests {
 	}
 
 	@Test
+	public void testRetrieveAllByGroup(){
+		assert taskFacade.retrieveAllByGroup("crmgroup").size == 3		
+	}
+	
+	@Test
+	public void testRetrieveAllByGroup_GroupNotExits(){
+		List tasks = taskFacade.retrieveAllByGroup("nogroup")
+		assert tasks.size == 0
+		assert !tasks
+		assert tasks == []
+	}
+	
+	@Test
 	public void testDelete(){
 		assert taskFacade.retrieveAll().size == 4
 		def task = taskFacade.retrieve("crmjob", "crmgroup")

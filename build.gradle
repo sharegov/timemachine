@@ -6,9 +6,16 @@ repositories {
     mavenCentral()
 }
 
+sourceSets.main.java.srcDirs = []
+sourceSets.main.groovy.srcDirs = ['src/main/groovy', 'src/main/java']
+sourceSets.test.java.srcDirs = []
+sourceSets.test.groovy.srcDirs = ['src/test/groovy', 'src/test/java']
+
+
+
 dependencies {
     groovy group: 'org.codehaus.groovy', name: 'groovy-all', version: '1.8.4'
-	compile group: 'org.springframework', name: 'spring-core', version: '3.1.0.RELEASE'
+	compile group: 'org.springframework', name: 'spring-core', version: '3.1.0.RELEASE' 
 	compile group: 'org.springframework', name: 'spring-context', version: '3.1.0.RELEASE'
 	compile group: 'org.springframework', name: 'spring-context-support', version: '3.1.0.RELEASE'
 	compile group: 'org.springframework', name: 'spring-tx', version: '3.1.0.RELEASE'
@@ -24,3 +31,6 @@ dependencies {
 	
     testCompile group: 'junit', name: 'junit', version: '4.8.2'
 }
+
+
+

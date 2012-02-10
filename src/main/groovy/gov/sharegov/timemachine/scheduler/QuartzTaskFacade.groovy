@@ -18,6 +18,11 @@ import org.quartz.impl.triggers.*
 
 import org.quartz.ObjectAlreadyExistsException
 
+/**
+ * The QuartzTaskFacade is the 'interface' to query Tasks where the scheduler
+ * @author fiallega
+ *
+ */
 class QuartzTaskFacade {
 	Scheduler scheduler
 
@@ -67,13 +72,31 @@ class QuartzTaskFacade {
 		scheduler.jobGroupNames.each {group ->
 			// enumerate each job in group
 			scheduler.getJobKeys(groupEquals(group)).each {jobKey ->
-				println jobKey.name
+				//println jobKey.name
 				tasks.add(retrieve(jobKey.name, jobKey.group))
 			}
 		}
 
 		return tasks
 
+	}
+
+	/**
+	 * Retrieves all tasks that belong to group 'group'
+	 * @param group
+	 * @return List - the tasks belonging to group 'group'. Returns empty list if no task
+	 * on the group which is the same as saying that the group does not exists.
+	 */
+	List retrieveAllByGroup(String group) {
+		List tasks = new ArrayList();
+
+		// enumerate each job in group
+		scheduler.getJobKeys(groupEquals(group)).each {jobKey ->
+			//println jobKey.name
+			tasks.add(retrieve(jobKey.name, jobKey.group))
+		}
+
+		return tasks
 	}
 
 	Task insert(Task task){
@@ -113,7 +136,7 @@ class QuartzTaskFacade {
 	/**
 	 * Update either the startTime,state,description and/or data
 	 * [startTime:Date(), state:'NORMAL',description:"",
-		data:[url:'http://localhost:9192/timemachine-0.1/task/']]	
+	 data:[url:'http://localhost:9192/timemachine-0.1/task/']]	
 	 * @param values
 	 * @param name
 	 * @param group
@@ -121,49 +144,49 @@ class QuartzTaskFacade {
 	 */
 	Task update(values, String name, String group){
 		Task task = retrieve(name, group)
-		
+
 		if(!task)
 			return null
-		
+
 		values.each {key,value ->
 			task."$key" = value
 		}
-		
+
 		// update job data
 		scheduler.addJob(getJob(task), true);
 
 		// update trigger data
 		Trigger trigger = scheduler.getTriggersOfJob(JobKey.jobKey(name, group))[0]
 		scheduler.rescheduleJob(trigger.key, getTrigger(task))
-		
+
 		// update state from PAUSE to NORMAL and from NORMAL to PAUSE
 		if(task.state == 'PAUSED')
 			scheduler.pauseJob(getJob(task).key)
 		else if(task.state == 'NORMAL')
 			scheduler.resumeJob(getJob(task).key)
-		
+
 		retrieve(name, group)
 	}
 
-	
+
 	Task update (Task task){
-		
+
 		if(!retrieve(task.name, task.group))
 			return null
-		
+
 		// update job data
 		scheduler.addJob(getJob(task), true);
 
 		// update trigger data
 		Trigger trigger = scheduler.getTriggersOfJob(JobKey.jobKey(task.name, task.group))[0]
 		scheduler.rescheduleJob(trigger.key, getTrigger(task))
-		
+
 		// update state from PAUSE to NORMAL and from NORMAL to PAUSE
 		if(task.state == 'PAUSED')
 			scheduler.pauseJob(getJob(task).key)
 		else if(task.state == 'NORMAL')
 			scheduler.resumeJob(getJob(task).key)
-		
+
 		retrieve(task.name, task.group)
 	}
 
@@ -185,16 +208,16 @@ class QuartzTaskFacade {
 	}
 
 	private Trigger getTrigger(Task task){
-		
+
 		def scheduleType
 		if(task.scheduleType == "SIMPLE")
-			scheduleType = simpleSchedule()	
+			scheduleType = simpleSchedule()
 		else if (task.scheduleType == "CRON"){
 			// TODO:Creation of cron expression needs a lot of work
 			def cronExpression = "${task.scheduleData.seconds} ${task.scheduleData.minutes} ${task.scheduleData.hours} ${task.scheduleData.day_of_month} ${task.scheduleData.month} ${task.scheduleData.day_of_week} ${task.scheduleData.year}"
 			scheduleType = cronSchedule(cronExpression)
 		}
-		
+
 		Trigger trigger = newTrigger()
 				.withIdentity(triggerKey(task.name, task.group))
 				.withSchedule(scheduleType)

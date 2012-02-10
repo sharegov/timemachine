@@ -104,12 +104,33 @@ public class TimeMachineService {
 	@Path("/task")
 	public Json getAllTasks() {
 
-		getLog().info("Starting getAllTask()");
+		getLog().info("Starting getAllTasks()");
 		ApplicationContext ctx = AppContext.getApplicationContext();
 		QuartzTaskFacade taskFacade = (QuartzTaskFacade) ctx
 				.getBean("taskFacade");
 		
 		List tasks = taskFacade.retrieveAll();
+		
+		getLog().debug(TaskConverter.toJson(tasks));
+		return read(TaskConverter.toJson(tasks));
+	}
+	
+	
+	/**
+	 * 
+	 * @param group
+	 * @return
+	 */
+	@GET
+	@Path("/task/{group}")
+	public Json getAllTasksByGroup(@PathParam("group") String group) {
+
+		getLog().info("Starting getAllTasksByGroup()");
+		ApplicationContext ctx = AppContext.getApplicationContext();
+		QuartzTaskFacade taskFacade = (QuartzTaskFacade) ctx
+				.getBean("taskFacade");
+		
+		List tasks = taskFacade.retrieveAllByGroup(group);
 		
 		getLog().debug(TaskConverter.toJson(tasks));
 		return read(TaskConverter.toJson(tasks));
