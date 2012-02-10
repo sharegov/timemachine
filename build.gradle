@@ -12,7 +12,6 @@ sourceSets.test.java.srcDirs = []
 sourceSets.test.groovy.srcDirs = ['src/test/groovy', 'src/test/java']
 
 
-
 dependencies {
     groovy group: 'org.codehaus.groovy', name: 'groovy-all', version: '1.8.4'
 	compile group: 'org.springframework', name: 'spring-core', version: '3.1.0.RELEASE' 
@@ -33,4 +32,9 @@ dependencies {
 }
 
 
+
+jar {
+     from { configurations.compile.collect { it.isDirectory() ? it : 
+zipTree(it) } }
+}
 
