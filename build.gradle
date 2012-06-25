@@ -38,8 +38,18 @@ dependencies {
 
 
 
-jar {
-     from { configurations.compile.collect { it.isDirectory() ? it : 
-zipTree(it) } }
-}
+//jar {
+//     from { configurations.compile.collect { it.isDirectory() ? it : 
+//zipTree(it) } }
+//}
+
+
+/**
+* Copies the dependencies to the lib directory in preparation for them to be added to a jar file
+*/
+task copyRuntimeDependencies(dependsOn: configurations.runtime.buildArtifacts, type: Copy){
+   into('build/output/lib')
+   from configurations.runtime
+   from configurations.runtime.allArtifacts*.file
+ }
 
