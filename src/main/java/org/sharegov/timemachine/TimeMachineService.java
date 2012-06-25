@@ -223,7 +223,7 @@ public class TimeMachineService {
 		QuartzTaskFacade taskFacade = (QuartzTaskFacade) ctx
 				.getBean("taskFacade");
 		Map map = json.asMap();
-		Task task = taskFacade.update(json, name, group);
+		Task task = taskFacade.update(map, name, group);
 		if (task == null)
 			return object("ko", true, "error", "task does not exist", "name", name, "group", group);
 		else		

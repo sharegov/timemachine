@@ -5,6 +5,7 @@ import static org.quartz.TriggerBuilder.*
 import static org.quartz.TriggerKey.*
 import static org.quartz.DateBuilder.*
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.impl.matchers.GroupMatcher.*
 
 import java.util.List;
