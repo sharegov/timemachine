@@ -28,8 +28,12 @@ class AsyncHTTPService implements HTTPService {
 
 
 		def	result = http.request(url, GET, contentType) {
-			uri.query = query
-
+			
+			// only add query params when they are passed in the query map, otherwise the params on the
+			// query string will be lost
+			if(query) 
+			  uri.query = query
+			  
 			response.success = {resp, data ->
 				_log.info "request() - request for url ${url} : ${data}"
 				return data
