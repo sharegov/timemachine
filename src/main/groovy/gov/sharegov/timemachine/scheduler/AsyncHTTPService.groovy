@@ -15,12 +15,37 @@ import org.slf4j.LoggerFactory;
 import static groovyx.net.http.ContentType.*
 import static groovyx.net.http.Method.*
 
+import javax.net.ssl.X509TrustManager
+import javax.net.ssl.SSLContext
+import java.security.cert.CertificateException
+import java.security.cert.X509Certificate
+import javax.net.ssl.TrustManager
+import java.security.SecureRandom
+import org.apache.http.conn.ssl.SSLSocketFactory
+import org.apache.http.conn.scheme.Scheme
+import org.apache.http.conn.scheme.SchemeRegistry
 
 class AsyncHTTPService implements HTTPService {
 
 	private static Logger _log = LoggerFactory.getLogger(AsyncHTTPService.class);
 
 	def http
+	
+	public void init(){
+		
+		// accept ssl self signed certificates (peer not authenticated - SSLPeerUnverifiedException
+		def sslContext = SSLContext.getInstance("SSL")
+		sslContext.init(null, [ new X509TrustManager() {
+			public X509Certificate[] getAcceptedIssuers() {null }
+			public void checkClientTrusted(X509Certificate[] certs, String authType) { }
+			public void checkServerTrusted(X509Certificate[] certs, String authType) { }
+		} ] as TrustManager[], new SecureRandom())
+
+		def sf = new SSLSocketFactory(sslContext)
+		sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
+		def httpsScheme = new Scheme("https", sf, 443)
+		http.client.connectionManager.schemeRegistry.register( httpsScheme )
+	}
 
 	Object request(String url, def query, ContentType contentType=JSON){
 
