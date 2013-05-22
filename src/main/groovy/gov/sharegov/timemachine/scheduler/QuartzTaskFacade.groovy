@@ -8,10 +8,13 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.impl.matchers.GroupMatcher.*
 
+import net.redhogs.cronparser.CronExpressionDescriptor
+
 import java.util.List;
 
 import org.quartz.JobDataMap
 import org.quartz.JobDetail
+import org.quartz.ScheduleBuilder
 import org.quartz.Scheduler
 import org.quartz.Trigger
 import org.quartz.JobKey
@@ -55,8 +58,12 @@ class QuartzTaskFacade {
 				task.scheduleData = [repeatCount:trigger?.repeatCount,
 							repeatInterval:trigger?.repeatInterval]
 			}
-			else if (trigger?.class == CronTriggerImpl.class)
+			else if (trigger?.class == CronTriggerImpl.class){
 				task.scheduleType = 'CRON'
+				
+				task.scheduleData = [cronExpression:trigger?.cronExpression,
+					cronExpression:CronExpressionDescriptor.getDescription(trigger?.cronExpression)]
+			}
 
 			task.state = scheduler.getTriggerState(trigger?.getKey())
 
@@ -110,9 +117,17 @@ class QuartzTaskFacade {
 				.build();
 
 		// build the trigger
+		
+		// build a cron or a simple schedule
+		ScheduleBuilder sb = null
+		if(task.scheduleType == "SIMPLE")
+			sb = simpleSchedule()
+		else if (task.scheduleType == "CRON")
+			sb = cronSchedule(task.scheduleData.cronExpression)
+				
 		Trigger trigger = newTrigger()
 				.withIdentity(triggerKey(task.name, task.group))
-				.withSchedule(simpleSchedule())
+				.withSchedule(sb)
 				.startAt(task.startTime)
 				.build();
 
