@@ -74,12 +74,11 @@ public class CrmJob implements Job {
 			HTTPService httpService = (AsyncHTTPService) ctx
 					.getBean("ASYNC_HTTP_SERVICE");
 
-			//httpService.request(url, query);
 			Map query = [schedule:TaskConverter.covertToMap(task)]
 
 			switch(httpMethod){
 				case "GET":
-					httpService.request(url, query)
+					httpService.request(url, null)
 					_log.info("End job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}. http method ${httpMethod} ");
 					break
 				
