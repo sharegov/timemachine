@@ -62,7 +62,10 @@ class QuartzTaskFacade {
 				task.scheduleType = 'CRON'
 				
 				task.scheduleData = [cronExpression:trigger?.cronExpression,
-					cronExpression:CronExpressionDescriptor.getDescription(trigger?.cronExpression)]
+					expressionSummary:trigger?.expressionSummary,
+					previousFireTime:trigger?.previousFireTime]
+					//cronDescription:CronExpressionDescriptor.getDescription("0 0,5,10,15,20,25,30,35,40,45,50,55 * ? * *")]
+					//cronDescription:CronExpressionDescriptor.getDescription(trigger?.cronExpression)]
 			}
 
 			task.state = scheduler.getTriggerState(trigger?.getKey())

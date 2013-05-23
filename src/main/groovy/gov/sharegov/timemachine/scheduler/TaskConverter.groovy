@@ -60,10 +60,17 @@ class TaskConverter {
 
 	static Object covertToMap(Task task){
 		
+		Map formattedScheduleData = task.scheduleData.inject([:]){acc, key, value -> 
+			if(value instanceof Date)
+			  acc << [(key):value.format('yyyy/MM/dd HH:mm:ss')]
+			else acc << [(key):value]  
+			return acc
+		}
+		
 		[name:task.name,
 			group:task.group,
 			scheduleType:task.scheduleType,
-			scheduleData:task.scheduleData,
+			scheduleData:formattedScheduleData,
 			startTime:task.startTime?.format('yyyy/MM/dd HH:mm:ss'),
 			endTime:null,
 			state:task.state,

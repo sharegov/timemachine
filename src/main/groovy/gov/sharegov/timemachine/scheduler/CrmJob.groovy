@@ -23,7 +23,7 @@ import static groovyx.net.http.Method.*
 public class CrmJob implements Job {
 
 	private static Logger _log = LoggerFactory.getLogger(CrmJob.class);
-	
+
 	/**
 	 * <p>
 	 * Empty constructor for job initilization
@@ -54,18 +54,52 @@ public class CrmJob implements Job {
 		context.getJobDetail().getJobDataMap().each {key, value ->
 			_log.info "-> ${key}, ${value}"
 		}
-		
-		//Obtain the url.
+
+		// Obtain the url.
 		String url = context.mergedJobDataMap.get('url')
 		_log.info "About to fire request to url: ${url}"
+
+		// Obtain the http method. No method, then by default is a GET
+		String httpMethod = context.mergedJobDataMap.get('method')?:"GET"
 		
-		// Fire the request to the url
+		// obtain task
 		ApplicationContext ctx = AppContext.getApplicationContext();
-		HTTPService httpService = (AsyncHTTPService) ctx
-				.getBean("ASYNC_HTTP_SERVICE");
-	    httpService.request(url, null);  
+		QuartzTaskFacade taskFacade = (QuartzTaskFacade) ctx
+				.getBean("taskFacade");
+		Task task = taskFacade.retrieve(context.jobDetail.key.name, context.jobDetail.key.group)
 		
-		_log.info("End job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}");
+		try{
+			// Fire the request to the url
+			ctx = AppContext.getApplicationContext();
+			HTTPService httpService = (AsyncHTTPService) ctx
+					.getBean("ASYNC_HTTP_SERVICE");
+
+			//httpService.request(url, query);
+			Map query = [schedule:TaskConverter.covertToMap(task)]
+
+			switch(httpMethod){
+				case "GET":
+					httpService.request(url, query)
+					_log.info("End job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}. http method ${httpMethod} ");
+					break
+				
+				case "POST":
+					httpService.requestPost(url, query)
+					_log.info("End job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}");
+					break
+				
+				default:
+					_log.error("http method ${httpMethod} not supported.  group/name ${context.jobDetail.group}/${context.jobDetail.name} - ${rode.message}" );
+
+			}
+			
+
+		} catch(RetrievalOfDataException rode){
+			// for now just swalow  it. I need to do something when jobs fail.
+			// re-schedule, send an alert somewhere ....
+			_log.error("End with ERROR job execution group/name ${context.jobDetail.group}/${context.jobDetail.name} - ${rode.message}" );
+		}
+
 	}
 
 }

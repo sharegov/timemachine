@@ -2,6 +2,17 @@ package gov.sharegov.timemachine.scheduler
 
 
 
+import groovyx.net.http.ContentType;
+
+
+import net.sf.json.JSONObject
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import groovyx.net.http.ContentType
+import groovyx.net.http.Method
+
+import static groovyx.net.http.ContentType.*
+import static groovyx.net.http.Method.*
 
 import javax.net.ssl.X509TrustManager
 import javax.net.ssl.SSLContext
@@ -12,17 +23,6 @@ import java.security.SecureRandom
 import org.apache.http.conn.ssl.SSLSocketFactory
 import org.apache.http.conn.scheme.Scheme
 import org.apache.http.conn.scheme.SchemeRegistry
-
-import net.sf.json.JSONObject
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import groovyx.net.http.ContentType
-import groovyx.net.http.Method
-
-import groovyx.net.http.ContentType;
-
-import static groovyx.net.http.ContentType.*
-import static groovyx.net.http.Method.*
 
 class SyncHTTPService implements HTTPService{
 
@@ -48,60 +48,98 @@ class SyncHTTPService implements HTTPService{
 
 	Object request(String url, def query, ContentType contentType=JSON){
 
+		def startDate = new Date().time
 
 		http.request(url, GET, contentType) {
 			uri.query = query
 
 			response.success = {resp, data ->
-				_log.info "request() - request for url ${url} : ${data}"
+				_log.info "syncRequest() - request for url ${url} : ${data}"
+				_log.info "syncRequest() - uri ${uri}"
+				_log.info "syncRequest() - response ${resp}"
+				_log.info "syncRequest() - query params ${query}"
+				_log.info "syncRequest() - conetentType ${contentType}"
 				return data
 			}
 
 			response.'404' = {resp ->
 				String message = "${resp.statusLine.statusCode} : ${resp.statusLine.reasonPhrase}"
-				_log.error "request() - 404 for url ${url} : ${message}"
-				//def result = [error:true, message:message] as JSONObject
-				return null
+				_log.error "syncrequest() - 404 for url ${url} : ${message}"
+				_log.error "syncRequest() - uri ${uri}"
+				_log.error "syncRequest() - response ${resp}"
+				_log.error "syncRequest() - query params ${query}"
+				_log.error "syncRequest() - conetentType ${contentType}"
+
+				def errorResult = [error:[code:resp.statusLine.statusCode, message:resp.statusLine.reasonPhrase, details:[""]]] as JSONObject
+				return errorResult
 			}
 
 			response.failure = { resp ->
 				String message = "${resp.statusLine.statusCode} : ${resp.statusLine.reasonPhrase}"
-				_log.error "request() - Unexpected error: request for url ${url} : ${message}"
-				//def result = [error:true, message:message] as JSONObject
-				return null
+				_log.error "syncRequest() - Unexpected error: request for url ${url} : ${message}"
+				_log.error "syncRequest() - uri ${uri}"
+				_log.error "syncRequest() - response ${resp}"
+				_log.error "syncRequest() - query params ${query}"
+				_log.error "syncRequest() - conetentType ${contentType}"
+
+				def errorResult = [error:[code:resp.statusLine.statusCode, message:resp.statusLine.reasonPhrase, details:[""]]] as JSONObject
+				return errorResult
+
 			}
 		}
+		
+		def endDate = new Date().time
+		_log.info "time for url ${url} is ${endDate-startDate}"
 	}
 
 	Object requestPost(String url, def query, ContentType contentType=JSON){
 
+		def startDate = new Date().time
+		
 		http.request(url, POST, contentType) {
 
 			send URLENC, query
 
 			response.success = {resp, data ->
-				_log.info "requestPost() - request for url ${url} : ${data}"
+				_log.info "syncRequestPost() - request for url ${url} : ${data}"
+				_log.info "syncRequestPost() - response ${resp}"
+				_log.info "syncRequestPost() - query params ${query}"
+				_log.info "syncRequestPost() - conetentType ${contentType}"
 				return data
 			}
 
 			response.'404' = {resp ->
 				String message = "${resp.statusLine.statusCode} : ${resp.statusLine.reasonPhrase}"
-				_log.error "requestPost() - 404 for url ${url} : ${message}"
-				//def result = [error:true, message:message] as JSONObject
-				return null
+				_log.error "syncRequestPost() - 404 for url ${url} : ${message}"
+				_log.error "syncRequestPost() - response ${resp}"
+				_log.error "syncRequestPost() - query params ${query}"
+				_log.error "syncRequestPost() - conetentType ${contentType}"
+
+				def errorResult = [error:[code:resp.statusLine.statusCode, message:resp.statusLine.reasonPhrase, details:[""]]] as JSONObject
+				return errorResult
 			}
 
 			response.failure = { resp ->
 				String message = "${resp.statusLine.statusCode} : ${resp.statusLine.reasonPhrase}"
-				_log.error "requestPost() - Unexpected error: request for url ${url} : ${message}"
-				//def result = [error:true, message:message] as JSONObject
-				return null
+				_log.error "syncRequestPost() - Unexpected error: request for url ${url} : ${message}"
+				_log.error "syncRequestPost() - response ${resp}"
+				_log.error "syncRequestPost() - query params ${query}"
+				_log.error "syncRequestPost() - conetentType ${contentType}"
+
+				def errorResult = [error:[code:resp.statusLine.statusCode, message:resp.statusLine.reasonPhrase, details:[""]]] as JSONObject
+				return errorResult
+
 			}
 		}
+		
+		def endDate = new Date().time
+		_log.info "syncRequestPost() - time for url ${url} is ${endDate-startDate}"
 	}
 
 	Map request(List urls, def query, ContentType contentType){
-		_log.error "requestMultiple() - Method not implemented. It returns null."
+		_log.error "requestMultiple - request() - Method not implemented. It returns null."
 		return null
 	}
 }
+
+

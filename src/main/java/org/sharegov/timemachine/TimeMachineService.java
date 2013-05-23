@@ -320,6 +320,15 @@ public class TimeMachineService {
 	}
 	
 	
+	@POST
+	@Path("/testtask")
+	@Consumes("application/json")
+	public Json testTask(Json json) {
+
+		return null;
+						
+	}
+	
 	public static Logger getLog() 
 	{
 		return LoggerFactory.getLogger(TimeMachineService.class);
