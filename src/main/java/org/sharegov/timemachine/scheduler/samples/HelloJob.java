@@ -15,7 +15,7 @@
  * 
  */
 
-package gov.sharegov.timemachine.scheduler.samples;
+package org.sharegov.timemachine.scheduler.samples;
 
 import java.util.Date;
 

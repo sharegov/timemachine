@@ -1,13 +1,22 @@
-package gov.sharegov.timemachine.scheduler;
+package org.sharegov.timemachine.scheduler;
 
 import java.util.Date;
 
+import org.sharegov.timemachine.AppContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.quartz.PersistJobDataAfterExecution
+import org.quartz.DisallowConcurrentExecution
+import org.quartz.Trigger
+
+import org.sharegov.timemachine.service.AsyncHTTPService;
+import org.sharegov.timemachine.service.HTTPService;
+import org.sharegov.timemachine.service.RetrievalOfDataException
+import groovy.time.*
 
 import groovyx.net.http.*
 import static groovyx.net.http.ContentType.*
@@ -20,6 +29,9 @@ import static groovyx.net.http.Method.*
  * 
  * @author fiallega
  */
+
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
 public class CrmJob implements Job {
 
 	private static Logger _log = LoggerFactory.getLogger(CrmJob.class);
@@ -76,30 +88,40 @@ public class CrmJob implements Job {
 			HTTPService httpService = (AsyncHTTPService) ctx
 					.getBean("ASYNC_HTTP_SERVICE");
 
-			Map query = [schedule:TaskConverter.covertToMap(task)]
+			//contentIsTask: false should be the default		
+			//Map query = [schedule:TaskConverter.covertToMap(task)]
+			Map query = task.restCall?.content
+			Map result = [:]
 
 			switch(httpMethod){
 				case "GET":
-					httpService.request(url, null)
+					result = httpService.request(url, null)
 					_log.info("End job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}. http method ${httpMethod} ");
 					break
 				
 				case "POST":
-					httpService.requestPost(url, query)
+					result = httpService.requestPost(url, query)
 					_log.info("End job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}");
 					break
 				
 				default:
 					_log.error("http method ${httpMethod} not supported.  group/name ${context.jobDetail.group}/${context.jobDetail.name} - ${rode.message}" );
-
 			}
 			
-
+			
+			if(result?.ok == false) {
+				context.data = result
+				context.data.retry = true
+				_log.error("End with ok=false. job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}" );
+				throw new JobExecutionException("error occured")
+			}
+			
+		    context.jobDetail.jobDataMap["previousFireTime"] = new Date()
 		} catch(RetrievalOfDataException rode){
-			// for now just swalow  it. I need to do something when jobs fail.
-			// re-schedule, send an alert somewhere ....
-			_log.error("End with ERROR job execution group/name ${context.jobDetail.group}/${context.jobDetail.name} - ${rode.message}" );
-		}
+			context.data = [retry:true]
+			_log.error("End with ERROR job execution group/name ${context.jobDetail.group}/${context.jobDetail.name} - ${rode.message}" );			
+			throw new JobExecutionException("error occured")
+		} 
 
 	}
 

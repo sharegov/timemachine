@@ -1,16 +1,14 @@
 package org.sharegov.timemachine;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
 
-import gov.sharegov.timemachine.scheduler.AppContext;
-import gov.sharegov.timemachine.scheduler.QuartzTaskFacade;
-import gov.sharegov.timemachine.scheduler.Task;
-import gov.sharegov.timemachine.scheduler.TaskConverter;
-import gov.sharegov.timemachine.scheduler.samples.HelloJob;
-import gov.sharegov.timemachine.scheduler.samples.TestMeGroovyBoy;
+
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -25,6 +23,10 @@ import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
+import org.sharegov.timemachine.scheduler.QuartzTaskFacade;
+import org.sharegov.timemachine.scheduler.Task;
+import org.sharegov.timemachine.scheduler.TaskConverter;
+import org.sharegov.timemachine.scheduler.samples.HelloJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -84,7 +86,7 @@ public class TimeMachineService {
 		Task task = taskFacade.retrieve(name,group);
 		if (task == null) {
 			getLog().debug("No task can be retrieved for name/group " + name + "/" + group);
-			return object("ko", true, "error", "task does not exist", "name", name, "group", group);
+			return object("ok", false, "message", "task not found", "name", name, "group", group);
 		}
 		else {
 			getLog().debug("About to return task " + TaskConverter.toJson(task));
@@ -168,8 +170,12 @@ public class TimeMachineService {
 		
 		Task task = taskFacade.insert(TaskConverter.toTask(json.toString()));
 		
-		getLog().debug(TaskConverter.toJson(task));
-		return read(TaskConverter.toJson(task));
+		if (task == null)
+			return read(TaskConverter.toJson(new Task()));
+		else {
+			getLog().debug(TaskConverter.toJson(task));
+			return read(TaskConverter.toJson(task));			
+		}
 						
 	}
 
@@ -260,27 +266,20 @@ public class TimeMachineService {
 		}
 
 	}
-			
-	@GET
-	@Path("/test")
-	public String test() {
-
-		ApplicationContext ctx = AppContext.getApplicationContext();
-		Scheduler scheduler = (Scheduler) ctx
-				.getBean("campaignManagerScheduler");
-		try {
-			System.out.println("THE SCHEDULER" + scheduler.getSchedulerName());
-		} catch (SchedulerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		TestMeGroovyBoy groovyBoy = (TestMeGroovyBoy) ctx.getBean("groovyBoy");
-		System.out.println("GREET: " + groovyBoy.getGreet());
-
-		return "ok";
+	
+	
+	@GET 
+	@Path("/time")
+	public Json time() {
+		Date date = new Date();
+		//Calendar calendar = new GregorianCalendar();
+		//CalendarFo
+		
+		String formattedDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(date);
+		
+		return object("time", date.getTime(), "formattedTime", formattedDate);
 	}
-
+	
 	@GET
 	@Path("/testquartz")
 	public String testQuartz() {
@@ -326,6 +325,16 @@ public class TimeMachineService {
 	public Json testTask(Json json) {
 
 		return null;
+						
+	}
+	
+	@POST
+	@Path("/testfalse")
+	@Consumes("application/json")
+	public Json testFalse(Json json) {
+
+		return object("ok", false, "retryAfter", 10);
+		
 						
 	}
 	

@@ -12,7 +12,7 @@
 
 
  <logger name="org.quartz">
-   <level value="info" />
+   <level value="debug" />
  </logger>
 
   <root>

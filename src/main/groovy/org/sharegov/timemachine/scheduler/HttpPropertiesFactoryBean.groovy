@@ -1,4 +1,6 @@
-package gov.sharegov.timemachine.scheduler
+package org.sharegov.timemachine.scheduler
+
+import org.sharegov.timemachine.service.HTTPService;
 
 import java.util.Properties;
 

@@ -1,4 +1,4 @@
-package gov.sharegov.timemachine.scheduler
+package org.sharegov.timemachine.scheduler
 
 import static org.quartz.JobBuilder.*;
 import static org.quartz.TriggerBuilder.*
@@ -46,7 +46,7 @@ class QuartzTaskFacade {
 		if (job) {
 			task.name = job.key.name
 			task.group = job.key.group
-			task.data = job.jobDataMap
+			task.restCall = job.jobDataMap
 			task.description = job.description
 
 			Trigger trigger = scheduler.getTriggersOfJob(JobKey.jobKey(name, group))[0]
@@ -63,7 +63,8 @@ class QuartzTaskFacade {
 				
 				task.scheduleData = [cronExpression:trigger?.cronExpression,
 					expressionSummary:trigger?.expressionSummary,
-					previousFireTime:trigger?.previousFireTime]
+					previousFireTime:job?.jobDataMap?.previousFireTime]
+					
 					//cronDescription:CronExpressionDescriptor.getDescription("0 0,5,10,15,20,25,30,35,40,45,50,55 * ? * *")]
 					//cronDescription:CronExpressionDescriptor.getDescription(trigger?.cronExpression)]
 			}
@@ -113,28 +114,31 @@ class QuartzTaskFacade {
 	Task insert(Task task){
 
 		// build the jobDetail
-		JobDetail job = newJob(CrmJob.class)
-				.withIdentity(task.name, task.group)
-				.withDescription(task.description)
-				.usingJobData(new JobDataMap(task.data))
-				.build();
+		JobDetail job = TaskConverter.buildJobFromTask(task)
 
 		// build the trigger
 		
 		// build a cron or a simple schedule
-		ScheduleBuilder sb = null
-		if(task.scheduleType == "SIMPLE")
-			sb = simpleSchedule()
-		else if (task.scheduleType == "CRON")
-			sb = cronSchedule(task.scheduleData.cronExpression)
-				
-		Trigger trigger = newTrigger()
-				.withIdentity(triggerKey(task.name, task.group))
-				.withSchedule(sb)
-				.startAt(task.startTime)
-				.build();
+//		ScheduleBuilder sb = null
+//		if(task.scheduleType == "SIMPLE")
+//			sb = simpleSchedule()
+//		else if (task.scheduleType == "CRON")
+//			sb = cronSchedule(task.scheduleData.cronExpression)
+//				
+//		Trigger trigger = newTrigger()
+//				.withIdentity(triggerKey(task.name, task.group))
+//				.withSchedule(sb)
+//				.startAt(task.startTime)
+//				.build();
+		
+		Trigger trigger = TaskConverter.buildTriggerFromTask(task)
+		
 
 		try{
+			// only schedule if job does not exist
+			if(scheduler.getJobDetail(job.key))
+				throw new ObjectAlreadyExistsException("job already exitss")
+			
 			//shedule a task
 			scheduler.scheduleJob(job, trigger);
 
@@ -145,6 +149,7 @@ class QuartzTaskFacade {
 			//retrieve task from schedule so that all fields are populated (ie:state)
 			return retrieve(task.name, task.group)
 		} catch (ObjectAlreadyExistsException oaee) {
+			//print oaee.printStackTrace()
 			task = null
 		}
 
@@ -172,17 +177,17 @@ class QuartzTaskFacade {
 		}
 
 		// update job data
-		scheduler.addJob(getJob(task), true);
+		scheduler.addJob(TaskConverter.buildJobFromTask(task), true);
 
 		// update trigger data
 		Trigger trigger = scheduler.getTriggersOfJob(JobKey.jobKey(name, group))[0]
-		scheduler.rescheduleJob(trigger.key, getTrigger(task))
+		scheduler.rescheduleJob(trigger.key, TaskConverter.buildTriggerFromTask(task))
 
 		// update state from PAUSE to NORMAL and from NORMAL to PAUSE
 		if(task.state == 'PAUSED')
-			scheduler.pauseJob(getJob(task).key)
+			scheduler.pauseJob(TaskConverter.buildJobFromTask(task).key)
 		else if(task.state == 'NORMAL')
-			scheduler.resumeJob(getJob(task).key)
+			scheduler.resumeJob(TaskConverter.buildJobFromTask(task).key)
 
 		retrieve(name, group)
 	}
@@ -194,17 +199,17 @@ class QuartzTaskFacade {
 			return null
 
 		// update job data
-		scheduler.addJob(getJob(task), true);
+		scheduler.addJob(TaskConverter.buildJobFromTask(task), true);
 
 		// update trigger data
 		Trigger trigger = scheduler.getTriggersOfJob(JobKey.jobKey(task.name, task.group))[0]
-		scheduler.rescheduleJob(trigger.key, getTrigger(task))
+		scheduler.rescheduleJob(trigger.key, TaskConverter.buildTriggerFromTask(task))
 
 		// update state from PAUSE to NORMAL and from NORMAL to PAUSE
 		if(task.state == 'PAUSED')
-			scheduler.pauseJob(getJob(task).key)
+			scheduler.pauseJob(TaskConverter.buildJobFromTask(task).key)
 		else if(task.state == 'NORMAL')
-			scheduler.resumeJob(getJob(task).key)
+			scheduler.resumeJob(TaskConverter.buildJobFromTask(task).key)
 
 		retrieve(task.name, task.group)
 	}
@@ -217,30 +222,30 @@ class QuartzTaskFacade {
 		scheduler.deleteJob JobKey.jobKey(name, group)
 	}
 
-	private JobDetail getJob(Task task){
-
-		JobDetail job = newJob(CrmJob.class)
-				.withIdentity(task.name, task.group)
-				.withDescription(task.description)
-				.usingJobData(new JobDataMap(task.data))
-				.build();
-	}
-
-	private Trigger getTrigger(Task task){
-
-		def scheduleType
-		if(task.scheduleType == "SIMPLE")
-			scheduleType = simpleSchedule()
-		else if (task.scheduleType == "CRON"){
-			// TODO:Creation of cron expression needs a lot of work
-			def cronExpression = "${task.scheduleData.seconds} ${task.scheduleData.minutes} ${task.scheduleData.hours} ${task.scheduleData.day_of_month} ${task.scheduleData.month} ${task.scheduleData.day_of_week} ${task.scheduleData.year}"
-			scheduleType = cronSchedule(cronExpression)
-		}
-
-		Trigger trigger = newTrigger()
-				.withIdentity(triggerKey(task.name, task.group))
-				.withSchedule(scheduleType)
-				.startAt(task.startTime)
-				.build();
-	}
+//	private JobDetail getJob(Task task){
+//
+//		JobDetail job = newJob(CrmJob.class)
+//				.withIdentity(task.name, task.group)
+//				.withDescription(task.description)
+//				.usingJobData(new JobDataMap(task.data))
+//				.build();
+//	}
+//
+//	private Trigger getTrigger(Task task){
+//
+//		def scheduleType
+//		if(task.scheduleType == "SIMPLE")
+//			scheduleType = simpleSchedule()
+//		else if (task.scheduleType == "CRON"){
+//			// TODO:Creation of cron expression needs a lot of work
+//			def cronExpression = "${task.scheduleData.seconds} ${task.scheduleData.minutes} ${task.scheduleData.hours} ${task.scheduleData.day_of_month} ${task.scheduleData.month} ${task.scheduleData.day_of_week} ${task.scheduleData.year}"
+//			scheduleType = cronSchedule(cronExpression)
+//		}
+//
+//		Trigger trigger = newTrigger()
+//				.withIdentity(triggerKey(task.name, task.group))
+//				.withSchedule(scheduleType)
+//				.startAt(task.startTime)
+//				.build();
+//	}
 }

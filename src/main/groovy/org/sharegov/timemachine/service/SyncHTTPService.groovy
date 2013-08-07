@@ -1,4 +1,4 @@
-package gov.sharegov.timemachine.scheduler
+package org.sharegov.timemachine.service
 
 
 
@@ -8,6 +8,7 @@ import groovyx.net.http.ContentType;
 import net.sf.json.JSONObject
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import groovyx.net.http.ContentType
 import groovyx.net.http.Method
 

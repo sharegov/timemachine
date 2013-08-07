@@ -1,4 +1,4 @@
-package gov.sharegov.timemachine.scheduler
+package org.sharegov.timemachine.service
 
 import java.util.List;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package gov.sharegov.timemachine.scheduler;
+package org.sharegov.timemachine;
 
 import org.springframework.context.ApplicationContext;  
 

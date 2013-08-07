@@ -1,4 +1,4 @@
-package gov.sharegov.timemachine.scheduler
+package org.sharegov.timemachine.scheduler
 
 class Task {
 		
@@ -11,5 +11,6 @@ class Task {
 	String state
 	String description
 	Map data
+	Map restCall
 
 }

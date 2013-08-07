@@ -1,4 +1,4 @@
-package gov.sharegov.timemachine.scheduler;
+package org.sharegov.timemachine.scheduler;
 
 import static org.junit.Assert.*;
 import static org.quartz.JobBuilder.*;
@@ -11,6 +11,9 @@ import org.quartz.JobDetail
 import org.quartz.Scheduler
 import org.quartz.JobKey
 import org.quartz.Trigger
+import org.sharegov.timemachine.AppContext;
+import org.sharegov.timemachine.scheduler.QuartzTaskFacade;
+import org.sharegov.timemachine.scheduler.Task;
 import org.springframework.context.ApplicationContext
 import org.springframework.context.support.ClassPathXmlApplicationContext
 

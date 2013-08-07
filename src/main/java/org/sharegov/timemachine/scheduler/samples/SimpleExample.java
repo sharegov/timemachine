@@ -1,4 +1,4 @@
-package gov.sharegov.timemachine.scheduler.samples;
+package org.sharegov.timemachine.scheduler.samples;
 /* 
  * Copyright 2005 - 2009 Terracotta, Inc. 
  * 

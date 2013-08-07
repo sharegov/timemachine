@@ -1,4 +1,4 @@
-package gov.sharegov.timemachine.scheduler
+package org.sharegov.timemachine.service
 
 class RetrievalOfDataException extends RuntimeException {
 	public RetrievalOfDataException() { super(); }
