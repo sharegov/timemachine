@@ -1,0 +1,6 @@
+.gradle
+build/
+*.class
+bin/
+config.xml
+configtest.xml
