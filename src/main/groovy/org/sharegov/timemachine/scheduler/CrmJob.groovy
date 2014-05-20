@@ -69,8 +69,6 @@ public class CrmJob implements Job {
 
 		// Obtain the url.
 		String url = context.mergedJobDataMap.get('url')
-		// hack fix for temporary corrupted data in db. Please remove at some point.
-		url = url.replaceFirst("https://311hub.miamidade.gov//", "https://311hub.miamidade.gov/")
 		_log.info "About to fire request to url: ${url}"
 
 		// Obtain the http method. No method, then by default is a GET
