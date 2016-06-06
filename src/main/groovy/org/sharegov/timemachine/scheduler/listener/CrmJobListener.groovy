@@ -1,7 +1,24 @@
+/*******************************************************************************
+ * Copyright 2014 Miami-Dade County
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 package org.sharegov.timemachine.scheduler.listener
 
+import org.sharegov.timemachine.IHistoryTaskDAO
+import org.sharegov.timemachine.scheduler.QuartzTaskFacade
 import org.sharegov.timemachine.scheduler.Task
-import org.sharegov.timemachine.service.HTTPService;
+import org.sharegov.timemachine.scheduler.TaskConverter
 import groovy.time.TimeCategory;
 
 import org.quartz.JobExecutionContext
@@ -15,7 +32,8 @@ import org.slf4j.LoggerFactory;
 
 class CrmJobListener implements JobListener {
 	
-	//HTTPService httpService
+	IHistoryTaskDAO historyTaskDAO
+	QuartzTaskFacade taskFacade
 	
 	private static Logger _log = LoggerFactory.getLogger(CrmJobListener.class);
 
@@ -34,17 +52,16 @@ class CrmJobListener implements JobListener {
     public void jobWasExecuted(JobExecutionContext context,
             JobExecutionException jee) {	
 
-		
 		// job executed with errors
 		if(jee) {			
 			_log.info("${context.jobDetail.group}/${context.jobDetail.name}: was NOT executed successfully.");
-			
+						
 			// retry only for simple triggers
 			if (context.trigger.class == SimpleTriggerImpl.class){
 				
 				if(context.data.retry && context.data.retryAfter)
 					retryOnce(context, context.data.retryAfter)
-				else if (context.data.retry)
+				else if (context.data.retry && context.data.retryMany)
 					retryMany(context)
 				else {
 					//Task task = taskFacade.retrieve(context.jobDetail.name, context.jobDetail.group)
@@ -52,6 +69,11 @@ class CrmJobListener implements JobListener {
 				}
 					
 			}
+			
+			// persist to DB
+			Task task = taskFacade.retrieve(context.jobDetail.name, context.jobDetail.group)
+			historyTaskDAO.saveHistory(task, context.getFireTime(), false, context.data);
+			
 		} else {
 
 			// reset the retries back to 1.
@@ -64,11 +86,14 @@ class CrmJobListener implements JobListener {
 			context.jobDetail.jobDataMap.retry = retry
 			
 			_log.info("${context.jobDetail.group}/${context.jobDetail.name}: Job was executed successfully.")
+			
+			// persist to DB
+			Task task = taskFacade.retrieve(context.jobDetail.name, context.jobDetail.group)
+			historyTaskDAO.saveHistory(task, context.getFireTime(), true, context.data);
 		
 		}
     }
 			
-	
 	private void retryOnce(JobExecutionContext context, Integer retryAfter){
 		Trigger retrievedTrigger = context.trigger
 		use(TimeCategory){
