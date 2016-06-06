@@ -34,7 +34,7 @@ class SyncHTTPService implements HTTPService{
 	public void init(){
 		
 		// accept ssl self signed certificates (peer not authenticated - SSLPeerUnverifiedException
-		def sslContext = SSLContext.getInstance("SSL")
+		def sslContext = SSLContext.getInstance("TLS")
 		sslContext.init(null, [ new X509TrustManager() {
 			public X509Certificate[] getAcceptedIssuers() {null }
 			public void checkClientTrusted(X509Certificate[] certs, String authType) { }

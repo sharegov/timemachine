@@ -9,6 +9,7 @@ public class StartUp
 {
 	public static void main(String []argv)
 	{
+		new ClassPathXmlApplicationContext("config.xml");
 		Component server = new Component();
 	    server.getServers().add(Protocol.HTTP, 9192);
 	    //server.getClients().add(Protocol.HTTP);
@@ -20,7 +21,7 @@ public class StartUp
 	    try
 		{
 			server.start();
-			new ClassPathXmlApplicationContext("config.xml");
+			//new ClassPathXmlApplicationContext("config.xml");
 		}
 		catch (Exception e)
 		{
