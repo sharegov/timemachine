@@ -367,7 +367,7 @@
 				<ref bean="ASYNC_HTTP_SERVICE" />
 			</property>
 			<property name="url"
-				value="http://s0020269:80/individuals/predefined/configset" />
+				value="https://cirm.miamidade.gov/individuals/predefined/configset" />
 		</bean>
 
 		<bean id="timeMachineScheduler"
