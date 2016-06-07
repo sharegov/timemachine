@@ -15,8 +15,10 @@
  ******************************************************************************/
 package org.sharegov.timemachine
 
-class TaskController {
+import org.sharegov.timemachine.scheduler.Task
 
-	
-	
+interface IHistoryTaskDAO extends Serializable{
+
+	public void saveHistory(Task task, Date fireTime, Boolean success, Map result)
+	public void doNothing()
 }

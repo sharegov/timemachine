@@ -1,7 +1,23 @@
+/*******************************************************************************
+ * Copyright 2014 Miami-Dade County
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 package org.sharegov.timemachine.scheduler.listener
 
 import java.util.Map;
 
+import org.sharegov.timemachine.IHistoryTaskDAO
 import org.sharegov.timemachine.scheduler.QuartzTaskFacade
 import org.sharegov.timemachine.scheduler.TaskConverter
 import org.sharegov.timemachine.scheduler.Task
@@ -24,6 +40,7 @@ class TestJobListener implements JobListener {
 	
 	HTTPService httpService
 	QuartzTaskFacade taskFacade
+	IHistoryTaskDAO historyTaskDAO
 		
 	private static Logger _log = LoggerFactory.getLogger(CrmJobListener.class);
 
@@ -57,9 +74,10 @@ class TestJobListener implements JobListener {
 			}
 			
 			Task task = taskFacade.retrieve(context.jobDetail.name, context.jobDetail.group)
-			Map data = TaskConverter.	covertToMap(task)
+			Map data = TaskConverter.covertToMap(task)
 			data.ok = false
-			httpService.requestPost("http://s0141668:5984/tm", data)
+			//httpService.requestPost("http://s0141668:5984/tm", data)
+			historyTaskDAO.saveHistory(task);
 			
 		} else {
 
@@ -77,7 +95,8 @@ class TestJobListener implements JobListener {
 			Task task = taskFacade.retrieve(context.jobDetail.name, context.jobDetail.group)
 			Map data = TaskConverter.covertToMap(task)
 			data.ok = true
-			httpService.requestPost("http://s0141668:5984/tm", data)					
+			//httpService.requestPost("http://s0141668:5984/tm", data)
+			historyTaskDAO.saveHistory(task);
 		}
 		
 

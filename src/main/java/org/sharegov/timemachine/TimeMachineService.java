@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2014 Miami-Dade County
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 package org.sharegov.timemachine;
 
 import java.text.SimpleDateFormat;
@@ -23,6 +38,9 @@ import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
+import org.restlet.Request;
+import org.restlet.data.Form;
+import org.sharegov.timemachine.HistoryTaskDAO;
 import org.sharegov.timemachine.scheduler.QuartzTaskFacade;
 import org.sharegov.timemachine.scheduler.Task;
 import org.sharegov.timemachine.scheduler.TaskConverter;
@@ -80,8 +98,7 @@ public class TimeMachineService {
 		
 		getLog().info("Starting getTask() for name/group " + name + "/" + group);
 		ApplicationContext ctx = AppContext.getApplicationContext();
-		QuartzTaskFacade taskFacade = (QuartzTaskFacade) ctx
-				.getBean("taskFacade");		
+		QuartzTaskFacade taskFacade = (QuartzTaskFacade) ctx.getBean("taskFacade");		
 		
 		Task task = taskFacade.retrieve(name,group);
 		if (task == null) {
@@ -281,9 +298,30 @@ public class TimeMachineService {
 	}
 	
 	@GET
+	@Path("/inserthistory")
+	public Json testInsertHistory(){
+		
+		ApplicationContext ctx = AppContext.getApplicationContext();
+		IHistoryTaskDAO taskFacade = (IHistoryTaskDAO) ctx
+				.getBean("HISTORY_TASK_DAO");
+		
+		taskFacade.doNothing();
+		
+		Task task = new Task();
+		task.setName("Joe");
+		
+		//taskFacade.saveHistory(task);
+		return object("time", "Please Check");
+	}
+	
+	@GET
 	@Path("/testquartz")
 	public String testQuartz() {
 
+		Request request = Request.getCurrent();
+		Form queryParams = Request.getCurrent().getResourceRef()
+				.getQueryAsForm();
+		
 		ApplicationContext ctx = AppContext.getApplicationContext();
 		Scheduler scheduler = (Scheduler) ctx
 				.getBean("timeMachineScheduler");

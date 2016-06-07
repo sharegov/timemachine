@@ -1,0 +1,572 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util" xmlns="http://www.springframework.org/schema/beans"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+	<util:constant id="CONTENTTYPE_JSON" static-field="groovyx.net.http.ContentType.JSON" />
+
+
+	<bean id="oracleDataSource" class="oracle.jdbc.pool.OracleDataSource"
+		destroy-method="close">
+		<property name="URL" value="${database.url}" />
+		<property name="user" value="${database.username}" />
+		<property name="password" value="${database.password}" />
+		<property name="implicitCachingEnabled" value="true" />
+		<property name="connectionCachingEnabled" value="true" />
+		<property name="connectionCacheProperties">
+			<props>
+				<prop key="MinLimit">10</prop>
+				<prop key="MaxLimit">10</prop>
+				<prop key="InitialLimit">10</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="hibernateSessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="oracleDataSource" />
+		<property name="annotatedClasses">
+			<list>
+				<value>org.sharegov.timemachine.HistoryTask</value>
+			</list>
+		</property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.Oracle10gDialect</prop>
+				<prop key="hibernate.show_sql">true</prop>
+			</props>
+		</property>
+	</bean>
+
+	<tx:annotation-driven />
+
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="hibernateSessionFactory" />
+	</bean>
+
+	<bean id="persistenceExceptionTranslationPostProcessor"
+		class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor" />
+
+	<bean id="HISTORY_TASK_DAO" class="org.sharegov.timemachine.HistoryTaskDAO">
+		<property name="sessionFactory" ref="hibernateSessionFactory" />
+	</bean>
+
+	<bean id="ASYNC_HTTP_BUILDER" class="groovyx.net.http.AsyncHTTPBuilder">
+		<constructor-arg>
+			<map>
+				<entry>
+					<key>
+						<value>poolSize</value>
+					</key>
+					<value>30</value>
+				</entry>
+
+				<entry>
+					<key>
+						<value>uri</value>
+					</key>
+					<value>http://s0142357.miamidade.gov</value>
+				</entry>
+
+				<entry>
+					<key>
+						<value>contentType</value>
+					</key>
+					<ref bean="CONTENTTYPE_JSON" />
+				</entry>
+			</map>
+		</constructor-arg>
+	</bean>
+
+	<bean id="ASYNC_HTTP_SERVICE" class="org.sharegov.timemachine.service.AsyncHTTPService"
+		init-method="init">
+
+		<property name="http">
+			<ref bean="ASYNC_HTTP_BUILDER" />
+		</property>
+		<property name="cookieName" value="usergroups" />
+		<property name="cookieValue" value="http%3A%2F%2Fwww.miamidade.gov%2Fontology%23CirmAdmin%3Bhttp%3A%2F%2Fwww.miamidade.gov%2Fontology%23Cirm311Supervisor%3Bhttp%3A%2F%2Fwww.miamidade.gov%2Fontology%23Community_Information_and_Outreach"/>
+	</bean>
+
+	<bean id="HTTP_BUILDER" class="groovyx.net.http.HTTPBuilder">
+
+		<constructor-arg index="0" value="http://s0142357.miamidade.gov" />
+
+		<constructor-arg index="1">
+
+			<ref bean="CONTENTTYPE_JSON" />
+		</constructor-arg>
+	</bean>
+
+	<bean id="SYNC_HTTP_SERVICE" class="org.sharegov.timemachine.service.SyncHTTPService"
+		init-method="init">
+
+		<property name="http">
+
+			<ref bean="HTTP_BUILDER" />
+		</property>
+	</bean>
+
+	<bean name="crmKey" class="org.quartz.JobKey">
+
+		<constructor-arg index="0" value="crmjob">
+		</constructor-arg>
+
+		<constructor-arg index="1" value="crmgroup">
+		</constructor-arg>
+	</bean>
+
+	<bean name="crmSimpleKey" class="org.quartz.JobKey">
+
+		<constructor-arg index="0" value="crmsimplejob">
+		</constructor-arg>
+
+		<constructor-arg index="1" value="crmgroup">
+		</constructor-arg>
+	</bean>
+
+	<bean name="crmJob" class="org.quartz.impl.JobDetailImpl">
+
+		<property name="jobClass" value="org.sharegov.timemachine.scheduler.CrmJob" />
+
+		<property name="group" value="crmgroup" />
+
+		<property name="name" value="crmjob" />
+
+		<property name="description" value="this is the crm cron job" />
+
+		<property name="jobDataMap">
+
+			<map>
+
+				<entry key="url"
+					value="https://311hub.miamidade.gov/legacy/bo/11003575/activity/ServiceActivity11004091/overdue/create/ASINJURE_NOTSUPVS" />
+			</map>
+		</property>
+	</bean>
+
+	<!-- http://w203-777:8182/legacy/alerts/311DUMP http://w203-014.miamidade.gov/reports/bluecartReport 
+		http://10.9.25.131:9192/timemachine-0.1/testtask http://s0141670:9193/mdc/mdcgis-0.1/candidates?street=11826%20SW%2097th%20Street -->
+
+	<bean name="crmSimpleJob" class="org.quartz.impl.JobDetailImpl">
+
+		<property name="jobClass" value="org.sharegov.timemachine.scheduler.CrmJob" />
+
+		<property name="group" value="crmgroup" />
+
+		<property name="name" value="crmsimplejob" />
+
+		<property name="description" value="this is the crm simple job" />
+
+		<property name="jobDataMap">
+
+			<map>
+
+				<entry key="url" value="http://localhost:9192/timemachine-0.1/task/" />
+			</map>
+		</property>
+	</bean>
+
+	<!-- Associate a Job Bean with a Trigger. -->
+
+
+	<!-- Fire at 8:00 pm every day -->
+
+	<bean id="crmTrigger" class="org.quartz.impl.triggers.CronTriggerImpl">
+
+		<property name="jobKey" ref="crmKey" />
+
+		<property name="group" value="crmgroup" />
+
+		<property name="name" value="crmtrigger" />
+
+		<property name="cronExpression">
+			<value>0 0/1 * * * ?</value>
+		</property>
+	</bean>
+
+	<bean id="dateFormat" class="java.text.SimpleDateFormat">
+
+		<constructor-arg value="yyyy-MM-dd" />
+	</bean>
+
+	<bean id="crmSimpleTrigger" class="org.quartz.impl.triggers.SimpleTriggerImpl">
+
+		<property name="jobKey" ref="crmSimpleKey" />
+
+		<property name="group" value="crmgroup" />
+
+		<property name="name" value="crmsimpletrigger" />
+
+		<property name="startTime">
+
+			<bean factory-bean="dateFormat" factory-method="parse">
+
+				<constructor-arg value="2020-01-31" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="taskFacade" class="org.sharegov.timemachine.scheduler.QuartzTaskFacade">
+
+		<property name="scheduler">
+
+			<ref bean="timeMachineScheduler" />
+		</property>
+	</bean>
+
+		<bean id="CRM_JOB_LISTENER"
+			class="org.sharegov.timemachine.scheduler.listener.CrmJobListener">
+			<property name="taskFacade">
+				<ref bean="taskFacade" />
+			</property>
+			<property name="historyTaskDAO">
+				<ref bean="HISTORY_TASK_DAO" />
+			</property>			
+		</bean>		
+
+	<bean name="PropertyPlaceholderConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="properties" ref="props" />
+	</bean>
+
+	<bean id="contextApplicationContextProvider" class="org.sharegov.timemachine.ApplicationContextProvider">
+	</bean>
+
+	<beans profile="dev">
+		<bean id="props" class="java.util.Properties">
+			<constructor-arg>
+
+				<props>
+					<prop key="database.url">jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=tstgrid-scan.miamidade.gov)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=tcirm.miamidade.gov)))
+					</prop>
+					<prop key="database.username">cirmschm</prop>
+					<prop key="database.password">ciaocirm</prop>
+				</props>
+				<!-- <props> <prop key="database.url">jdbc:oracle:thin:@(DESCRIPTION 
+					=(ADDRESS = (PROTOCOL = TCP)(HOST = s0142082.miamidade.gov)(PORT = 1521))(ADDRESS 
+					= (PROTOCOL = TCP)(HOST = s0142083.miamidade.gov)(PORT = 1521))(LOAD_BALANCE 
+					= yes)(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = twasdev.miamidade.gov)))</prop> 
+					<prop key="database.username">portalcore</prop> <prop key="database.password">portalcore</prop> 
+					</props> -->
+			</constructor-arg>
+		</bean>
+
+		<bean id="TEST_JOB_LISTENER"
+			class="org.sharegov.timemachine.scheduler.listener.TestJobListener">
+			<property name="httpService">
+				<ref bean="ASYNC_HTTP_SERVICE" />
+			</property>
+			<property name="taskFacade">
+				<ref bean="taskFacade" />
+			</property>
+			<property name="historyTaskDAO">
+				<ref bean="HISTORY_TASK_DAO" />
+			</property>			
+		</bean>
+		
+
+
+		<bean id="TEST_TRIGGER_LISTENER"
+			class="org.sharegov.timemachine.scheduler.listener.TestTriggerListener">
+			<property name="taskFacade">
+				<ref bean="taskFacade" />
+			</property>
+		</bean>
+
+		<bean id="timeMachineScheduler"
+			class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+
+			<property name="autoStartup" value="true" />
+
+			<property name="schedulerName">
+				<value>timeMachineSheduler</value>
+			</property>
+
+			<property name="globalJobListeners">
+				<list>
+					<ref bean="CRM_JOB_LISTENER" />
+				</list>
+			</property>
+			<property name="globalTriggerListeners">
+				<list>
+					<ref bean="TEST_TRIGGER_LISTENER" />
+				</list>
+			</property>
+
+			<property name="quartzProperties">
+				<props>
+					<prop key="org.quartz.plugin.CrmJobPlugin.class">org.sharegov.timemachine.scheduler.listener.CrmJobPlugin
+					</prop>
+
+					<prop key="org.quartz.threadPool.class">org.quartz.simpl.SimpleThreadPool
+					</prop>
+					<prop key="org.quartz.threadPool.threadCount">4</prop>
+					<prop key="org.quartz.jobStore.class">org.quartz.simpl.RAMJobStore
+					</prop>
+				</props>
+			</property>
+			<property name="triggers">
+				<list>
+					<ref bean="crmTrigger" />
+					<ref bean="crmSimpleTrigger" />
+				</list>
+			</property>
+			<property name="jobDetails">
+				<list>
+					<ref bean="crmJob" />
+					<ref bean="crmSimpleJob" />
+				</list>
+			</property>
+		</bean>
+
+	</beans>
+
+	<beans profile="test">
+
+		<bean id="crmTestTrigger" class="org.quartz.impl.triggers.CronTriggerImpl">
+
+			<property name="jobKey" ref="crmKey" />
+
+			<property name="group" value="crmgroup" />
+
+			<property name="name" value="crmtrigger" />
+
+			<property name="cronExpression">
+				<value>0 0,5,10,15,20,25,30,35,40,45,50,55 * ? * * *</value>
+			</property>
+		</bean>
+
+		<bean name="crmTestJob" class="org.quartz.impl.JobDetailImpl">
+
+			<property name="jobClass" value="org.sharegov.timemachine.scheduler.CrmJob" />
+
+			<property name="group" value="crmgroup" />
+
+			<property name="name" value="crmjob" />
+
+			<property name="description" value="this is the crm cron job" />
+
+			<property name="jobDataMap">
+
+				<map>
+
+					<entry key="url"
+						value="http://s0141668:9193/mdc/mdcgis-0.1/candidates?street=11826%20SW%2097th%20Street" />
+				</map>
+			</property>
+		</bean>
+
+		<bean id="props"
+			class="org.sharegov.timemachine.scheduler.HttpPropertiesFactoryBean">
+			<property name="httpService">
+				<ref bean="ASYNC_HTTP_SERVICE" />
+			</property>
+			<property name="url"
+				value="http://s0020269:80/individuals/predefined/configset" />
+		</bean>
+
+		<bean id="timeMachineScheduler"
+			class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+
+			<property name="dataSource" ref="oracleDataSource" />
+			<property name="autoStartup" value="true" />
+			<property name="schedulerName">
+				<value>timeMachineSheduler</value>
+			</property>
+			<property name="globalJobListeners">
+				<list>
+					<ref bean="CRM_JOB_LISTENER" />
+				</list>
+			</property>
+			<property name="quartzProperties">
+				<props>
+					<!-- Configure jmx -->
+					<prop key="org.quartz.scheduler.jmx.export">true</prop>
+					<!-- Configure Main Scheduler Properties -->
+					<!-- Configure Plugins 
+					<prop key="org.quartz.plugin.CrmJobPlugin.class">org.sharegov.timemachine.scheduler.listener.CrmJobPlugin
+					</prop>
+					-->
+					<!-- Configure ThreadPool -->
+					<prop key="org.quartz.threadPool.class">org.quartz.simpl.SimpleThreadPool
+					</prop>
+					<prop key="org.quartz.threadPool.threadCount">10</prop>
+					<!-- Configure JobStore -->
+					<prop key="org.quartz.jobStore.class">org.quartz.impl.jdbcjobstore.JobStoreTX
+					</prop>
+					<prop key="org.quartz.jobStore.driverDelegateClass">org.quartz.impl.jdbcjobstore.oracle.OracleDelegate
+					</prop>
+					<prop key="org.quartz.jobStore.tablePrefix">CIRM_QRTM_</prop>
+				</props>
+			</property>
+
+			<property name="triggers">
+
+				<list>
+					<ref bean="crmTestTrigger" />
+				</list>
+			</property>
+			<property name="jobDetails">
+				<list>
+					<ref bean="crmTestJob" />
+				</list>
+			</property>
+		</bean>
+	</beans>
+
+	<beans profile="prod">
+
+		<bean name="crmOneNodeKey" class="org.quartz.JobKey">
+
+			<constructor-arg index="0" value="crmonenodejob">
+			</constructor-arg>
+
+			<constructor-arg index="1" value="crmgroup">
+			</constructor-arg>
+		</bean>
+
+		<bean id="crmOneNodeTrigger" class="org.quartz.impl.triggers.CronTriggerImpl">
+
+			<property name="jobKey" ref="crmOneNodeKey" />
+
+			<property name="group" value="crmgroup" />
+
+			<property name="name" value="crmonenodetrigger" />
+
+			<property name="cronExpression">
+				<value>0 0,5,10,15,20,25,30,35,40,45,50,55 * ? * * *</value>
+			</property>
+		</bean>
+
+		<bean name="crmOneNodeJob" class="org.quartz.impl.JobDetailImpl">
+
+			<property name="jobClass" value="org.sharegov.timemachine.scheduler.CrmJob" />
+
+			<property name="group" value="crmgroup" />
+
+			<property name="name" value="crmonenodejob" />
+
+			<property name="description" value="this keeps mdcgis prod node one alive" />
+
+			<property name="jobDataMap">
+
+				<map>
+
+					<entry key="url"
+						value="http://s2030050.miamidade.gov:9193/mdc/mdcgis-0.1/candidates?street=11826%20sw%2097th%20street" />
+				</map>
+			</property>
+		</bean>
+
+		<bean name="crmTwoNodeKey" class="org.quartz.JobKey">
+
+			<constructor-arg index="0" value="crmtwonodejob">
+			</constructor-arg>
+
+			<constructor-arg index="1" value="crmgroup">
+			</constructor-arg>
+		</bean>
+
+		<bean id="crmTwoNodeTrigger" class="org.quartz.impl.triggers.CronTriggerImpl">
+
+			<property name="jobKey" ref="crmTwoNodeKey" />
+
+			<property name="group" value="crmgroup" />
+
+			<property name="name" value="crmtwonodetrigger" />
+
+			<property name="cronExpression">
+				<value>0 0,5,10,15,20,25,30,35,40,45,50,55 * ? * * *</value>
+			</property>
+		</bean>
+
+		<bean name="crmTwoNodeJob" class="org.quartz.impl.JobDetailImpl">
+
+			<property name="jobClass" value="org.sharegov.timemachine.scheduler.CrmJob" />
+
+			<property name="group" value="crmgroup" />
+
+			<property name="name" value="crmtwonodejob" />
+
+			<property name="description" value="this keeps mdcgis prod node two alive" />
+
+			<property name="jobDataMap">
+
+				<map>
+
+					<entry key="url"
+						value="http://s2030051.miamidade.gov:9193/mdc/mdcgis-0.1/candidates?street=11826%20sw%2097th%20street" />
+				</map>
+			</property>
+		</bean>
+
+		<bean id="props"
+			class="org.sharegov.timemachine.scheduler.HttpPropertiesFactoryBean">
+			<property name="httpService">
+				<ref bean="ASYNC_HTTP_SERVICE" />
+			</property>
+			<property name="url"
+				value="https://311hub.miamidade.gov/individuals/predefined/configset" />
+		</bean>
+		<bean id="timeMachineScheduler"
+			class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+
+			<property name="dataSource" ref="oracleDataSource" />
+			<property name="autoStartup" value="true" />
+			<property name="schedulerName">
+				<value>timeMachineSheduler</value>
+			</property>
+		
+			<property name="globalJobListeners">
+				<list>
+					<ref bean="CRM_JOB_LISTENER" />
+				</list>
+			</property>
+						
+			<property name="quartzProperties">
+				<props>
+
+					<!-- Configure Main Scheduler Properties -->
+					<!-- Configure jmx -->
+					<prop key="org.quartz.scheduler.jmx.export">true</prop>
+					<!-- Configure Plugins 
+					<prop key="org.quartz.plugin.CrmJobPlugin.class">org.sharegov.timemachine.scheduler.listener.CrmJobPlugin
+					</prop>
+					-->
+					<!-- Configure ThreadPool -->
+					<prop key="org.quartz.threadPool.class">org.quartz.simpl.SimpleThreadPool
+					</prop>
+					<prop key="org.quartz.threadPool.threadCount">10</prop>
+					<!-- Configure JobStore -->
+					<prop key="org.quartz.jobStore.class">org.quartz.impl.jdbcjobstore.JobStoreTX
+					</prop>
+					<prop key="org.quartz.jobStore.driverDelegateClass">org.quartz.impl.jdbcjobstore.oracle.OracleDelegate
+					</prop>
+					<prop key="org.quartz.jobStore.tablePrefix">CIRM_QRTM_</prop>
+				</props>
+			</property>
+
+
+			<property name="triggers">
+				<list>
+					<ref bean="crmOneNodeTrigger" />
+					<ref bean="crmTwoNodeTrigger" />
+				</list>
+			</property>
+			<property name="jobDetails">
+				<list>
+					<ref bean="crmOneNodeJob" />
+					<ref bean="crmTwoNodeJob" />
+				</list>
+			</property>
+
+		</bean>
+
+	</beans>
+
+</beans>

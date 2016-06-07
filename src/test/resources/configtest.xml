@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+
+	<util:constant id="CONTENTTYPE_JSON" static-field="groovyx.net.http.ContentType.JSON" />
+
+    <bean id="ASYNC_HTTP_BUILDER" class="groovyx.net.http.AsyncHTTPBuilder">
+		<constructor-arg>
+			<map>
+				<entry>
+					<key>
+						<value>poolSize</value>
+					</key>
+					<value>30</value>
+				</entry>
+				<entry>
+					<key>
+						<value>uri</value>
+					</key>
+					<value>http://s0142357.miamidade.gov</value>
+				</entry>
+				<entry>
+					<key>
+						<value>contentType</value>
+					</key>
+					<ref bean="CONTENTTYPE_JSON" />
+				</entry>
+			</map>
+
+		</constructor-arg>
+	</bean>
+
+
+	<bean id="ASYNC_HTTP_SERVICE" class="org.sharegov.timemachine.service.AsyncHTTPService">
+		<property name="http">
+			<ref bean="ASYNC_HTTP_BUILDER" />
+		</property>
+	</bean>
+	
+	<bean id="HTTP_BUILDER" class="groovyx.net.http.HTTPBuilder">
+		<constructor-arg index="0" value="http://s0142357.miamidade.gov" />
+		<constructor-arg index="1">
+			<ref bean="CONTENTTYPE_JSON" />
+		</constructor-arg>
+	</bean>
+
+	<bean id="SYNC_HTTP_SERVICE" class="org.sharegov.timemachine.service.SyncHTTPService">
+		<property name="http">
+			<ref bean="HTTP_BUILDER" />
+		</property>
+	</bean>
+    
+	<bean name="crmKey" class="org.quartz.JobKey">
+ 		<constructor-arg index="0" value="crmjob"></constructor-arg>
+ 		<constructor-arg index="1" value="crmgroup"></constructor-arg>
+	</bean>
+
+	<bean name="crmSimpleKey" class="org.quartz.JobKey">
+ 		<constructor-arg index="0" value="crmsimplejob"></constructor-arg>
+ 		<constructor-arg index="1" value="crmgroup"></constructor-arg>
+	</bean>
+
+   	<bean name="crmJob" class="org.quartz.impl.JobDetailImpl">
+   	    <property name="jobClass" value="org.sharegov.timemachine.scheduler.CrmTestJob"/>
+   	    <property name="group" value="crmgroup"/>
+   	    <property name="name" value="crmjob"/>
+   	    <property name="description" value="this is the crmjob"/>
+   	    <property name="jobDataMap">
+   		   <map>
+   		      <entry key="url" value="http://localhost:9192/timemachine-0.1/task/"/>
+   		   </map>
+   		</property>
+	</bean>
+	
+	<bean name="crmSimpleJob" class="org.quartz.impl.JobDetailImpl">
+   	    <property name="jobClass" value="org.sharegov.timemachine.scheduler.CrmTestJob"/>
+   	    <property name="group" value="crmgroup"/>
+   	    <property name="name" value="crmsimplejob"/>
+   	    <property name="description" value="this is the crm simple job"/>
+   	    <property name="jobDataMap">
+   		   <map>
+   		      <entry key="url" value="http://localhost:9192/timemachine-0.1/task/"/>
+   		   </map>
+   		</property>
+	</bean>
+	
+	<bean name="crmJobTwo" class="org.quartz.impl.JobDetailImpl">
+   	    <property name="jobClass" value="org.sharegov.timemachine.scheduler.CrmTestJob"/>
+   	    <property name="group" value="crmgroup"/>
+   	    <property name="name" value="crmjobtwo"/>
+   	    <property name="description" value="this is the crmjobtwo"/>
+   	    <property name="jobDataMap">
+   		   <map>
+   		      <entry key="url" value="http://localhost:9192/timemachine-0.1/task/"/>
+   		   </map>
+   		</property>   	    
+	</bean>
+	
+	<bean name="crmJobThree" class="org.quartz.impl.JobDetailImpl">
+   	    <property name="jobClass" value="org.sharegov.timemachine.scheduler.CrmTestJob"/>
+   	    <property name="group" value="crmgroupthree"/>
+   	    <property name="name" value="crmjobthree"/>
+	</bean>
+	
+	<!-- Associate a Job Bean with a Trigger. -->
+
+	<!-- Fire at 8:00 pm every day -->
+
+    <bean id="crmTrigger" class="org.quartz.impl.triggers.CronTriggerImpl">
+   	        <property name="jobKey" ref="crmKey"/>
+   	        <property name="group" value="crmgroup"/>
+   	        <property name="name" value="crmtrigger"/> 
+			<property name="cronExpression">
+
+				<value>0 0,5,10,15,20,25,30,35,40,45,50,55 * ? * * *</value>
+  			</property>
+	</bean>
+
+	<bean id="dateFormat" class="java.text.SimpleDateFormat">
+		<constructor-arg value="yyyy-MM-dd" />
+	</bean>
+
+    <bean id="crmSimpleTrigger" class="org.quartz.impl.triggers.SimpleTriggerImpl">
+   	        <property name="jobKey" ref="crmSimpleKey"/>
+   	        <property name="group" value="crmgroup"/>
+   	        <property name="name" value="crmsimpletrigger"/>
+   	        <property name="startTime">
+	   	        <bean factory-bean="dateFormat" factory-method="parse">
+					<constructor-arg value="2020-01-31" />
+				</bean>
+   	        </property>
+	</bean>
+
+
+    <bean id="timeMachineTestScheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+			<property name="autoStartup" value="true"/>
+			<property name="schedulerName">
+				<value>timeMachineTestScheduler</value>
+			</property>
+		   <property name="quartzProperties">
+		      <props>
+		        <!-- Configure Main Scheduler Properties -->
+		        
+				<!-- Configure Plugins -->
+
+		        <!-- Configure ThreadPool -->
+		         <prop key="org.quartz.threadPool.class">
+		           org.quartz.simpl.SimpleThreadPool
+		         </prop>
+		         <prop key="org.quartz.threadPool.threadCount">4</prop>
+
+		        <!-- Configure JobStore -->
+		        <prop key="org.quartz.jobStore.class">org.quartz.simpl.RAMJobStore</prop>
+		      </props>
+		    </property>
+		    
+
+		    <property name="triggers">
+			    <list>
+				    <ref bean="crmTrigger"/>
+				    <ref bean="crmSimpleTrigger"/>
+			    </list>
+	        </property>
+
+		   <property name="jobDetails">
+			    <list>
+				    <ref bean="crmJob"/>
+				    <ref bean="crmSimpleJob"/>				    
+				    <ref bean="crmJobTwo"/>
+				    <ref bean="crmJobThree"/>				    				    
+			    </list>
+	        </property>
+	        
+	</bean>
+	
+	<bean id="contextApplicationContextProvider" class="org.sharegov.timemachine.ApplicationContextProvider"></bean>
+	
+</beans>	

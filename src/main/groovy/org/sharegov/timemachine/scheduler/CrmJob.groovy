@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2014 Miami-Dade County
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 package org.sharegov.timemachine.scheduler;
 
 import java.util.Date;
@@ -86,10 +101,14 @@ public class CrmJob implements Job {
 			HTTPService httpService = (AsyncHTTPService) ctx
 					.getBean("ASYNC_HTTP_SERVICE");
 
-			//contentIsTask: false should be the default		
-			//Map query = [schedule:TaskConverter.covertToMap(task)]
-			Map query = task.restCall?.content
+			//contentIsTask: false should be the default
+			Map query = [:]
 			Map result = [:]
+			if(task.restCall?.contentIsTask)				
+				query = [schedule:TaskConverter.covertToMap(task)]
+			else	
+				query = task.restCall?.content
+				
 
 			switch(httpMethod){
 				case "GET":
@@ -106,17 +125,27 @@ public class CrmJob implements Job {
 					_log.error("http method ${httpMethod} not supported.  group/name ${context.jobDetail.group}/${context.jobDetail.name} - ${rode.message}" );
 			}
 			
-			
-			if(result?.ok == false) {
-				context.data = result
-				context.data.retry = true
-				_log.error("End with ok=false. job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}" );
-				throw new JobExecutionException("error occured")
+			// success, keep result to be used by listeners
+			context.data = result
+				
+			if(result?.ok == false){
+				if(result?.retryAfter) {
+					context.data = result
+					context.data.retry = true
+					_log.error("End with ok=false. job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}" );
+					throw new JobExecutionException("error occured")
+				}
+				else {
+					context.data = result
+					context.data.retry = false
+					_log.error("End with ok=false. job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}" );
+					throw new JobExecutionException("error occured")
+				}
 			}
 			
 		    context.jobDetail.jobDataMap["previousFireTime"] = new Date()
 		} catch(RetrievalOfDataException rode){
-			context.data = [retry:true]
+			context.data = [retry:true, retryMany:true, ok:false, message:rode.message]
 			_log.error("End with ERROR job execution group/name ${context.jobDetail.group}/${context.jobDetail.name} - ${rode.message}" );			
 			throw new JobExecutionException("error occured")
 		} 
