@@ -337,7 +337,7 @@
 			<property name="name" value="crmtrigger" />
 
 			<property name="cronExpression">
-				<value>0 0,5,10,15,20,25,30,35,40,45,50,55 * ? * * *</value>
+				<value>0 0/1 * ? * * *</value>
 			</property>
 		</bean>
 
@@ -356,7 +356,7 @@
 				<map>
 
 					<entry key="url"
-						value="http://s0141668:9193/mdc/mdcgis-0.1/candidates?street=11826%20SW%2097th%20Street" />
+						value="https://cirm.miamidade.gov:9196/mdc/mdcgis-0.1/candidates?street=11826%20SW%2097th%20Street" />
 				</map>
 			</property>
 		</bean>

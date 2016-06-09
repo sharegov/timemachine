@@ -180,17 +180,19 @@ public class TimeMachineService {
 	@Consumes("application/json")
 	public Json insertTask(Json json) {
 
-		getLog().info("Starting insetTask() " + json.toString());
+		getLog().info("Starting insertTask() " + json.toString());
 		ApplicationContext ctx = AppContext.getApplicationContext();
 		QuartzTaskFacade taskFacade = (QuartzTaskFacade) ctx
 				.getBean("taskFacade");
 		
 		Task task = taskFacade.insert(TaskConverter.toTask(json.toString()));
 		
-		if (task == null)
+		if (task == null) {
+			getLog().info("Finish insertTask() . No Task to be inserted.");
 			return read(TaskConverter.toJson(new Task()));
+		}
 		else {
-			getLog().debug(TaskConverter.toJson(task));
+			getLog().info("Finish insertTask() " +  TaskConverter.toJson(task));
 			return read(TaskConverter.toJson(task));			
 		}
 						

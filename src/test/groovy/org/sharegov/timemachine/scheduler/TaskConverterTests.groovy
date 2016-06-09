@@ -21,6 +21,7 @@ import static org.quartz.TriggerBuilder.*
 import static org.quartz.DateBuilder.*
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 
+import groovy.json.JsonSlurperClassic
 import org.junit.*;
 import org.quartz.JobDetail
 import org.quartz.Scheduler
@@ -70,7 +71,7 @@ class TaskConverterTests {
 			description:"this is a new insert newcrmjob",
 			data:[url:'http://localhost:9192/timemachine-0.1/task/']]
 		
-		assert TaskConverter.toJson(task) == '{"name":"newcrmjob","group":"newcrmgroup","scheduleType":"SIMPLE","scheduleData":{},"startTime":"2020/11/01 14:00:00","endTime":null,"state":"NORMAL","description":"this is a new insert newcrmjob","data":{"url":"http://localhost:9192/timemachine-0.1/task/"}}'
+		assert TaskConverter.toJson(task) == '{"name":"newcrmjob","group":"newcrmgroup","scheduleType":"SIMPLE","scheduleData":{},"startTime":"2020/11/01 14:00:00","endTime":null,"state":"NORMAL","description":"this is a new insert newcrmjob","restCall":{"url":"http://localhost:9192/timemachine-0.1/task/"}}'
 		
 	}
 	
@@ -106,6 +107,44 @@ class TaskConverterTests {
 	}
 	
 	@Test
+	public void testToTask_Type(){
+		
+		String json = '''{"name":"myJob",
+						  "group":"myGroup",
+						  "scheduleType":"SIMPLE",
+						  "scheduleData":{},
+						  "startTime":{"second":"0",
+										"minute":"0",
+						        		"hour":"14",
+						  				"day_of_month":"1",
+										"month":"11",	 
+										"year":"2020"},
+						  "endTime":{},
+						  "state":"PAUSED",
+						  "description":"this is the description",
+						  "restCall":{"url":"http://localhost:9192",
+								  "content":{"greet":"hello"}}}''' 
+
+         Task task = TaskConverter.toTask(json)
+		 assert task.restCall.content.greet == "hello"
+		 
+		 println(task.restCall);
+		 println(task.restCall.class);
+		 //assert task.restCall.class == Map
+		 
+		 def jsonSlurper = new JsonSlurperClassic()
+		 def object = jsonSlurper.parseText('{ "myList": {"greetings":"hello"} }')
+		 
+		 assert object instanceof Map
+		 println object.myList
+		 println("The CLSASS IS " + object.getClass())
+		 //assert object.class ==  Map
+		 //assert object.myList instanceof List
+		 //assert object.myList == [4, 8, 15, 16, 23, 42]
+
+	}
+	
+	@Test
 	public void testToJsonList(){
 		
 		Date startTime = new Date().parse('yyyy/MM/dd HH:mm:ss', '2020/11/01 14:0:0')
@@ -119,7 +158,7 @@ class TaskConverterTests {
 			description:"this is a new insert newcrmjob",
 			data:[url:'http://localhost:9192/timemachine-0.1/task/']]
 		
-		assert TaskConverter.toJson([task]) == '[{"name":"newcrmjob","group":"newcrmgroup","scheduleType":"SIMPLE","scheduleData":{},"startTime":"2020/11/01 14:00:00","endTime":null,"state":"NORMAL","description":"this is a new insert newcrmjob","data":{"url":"http://localhost:9192/timemachine-0.1/task/"}}]'
+		assert TaskConverter.toJson([task]) == '[{"name":"newcrmjob","group":"newcrmgroup","scheduleType":"SIMPLE","scheduleData":{},"startTime":"2020/11/01 14:00:00","endTime":null,"state":"NORMAL","description":"this is a new insert newcrmjob","restCall":{"url":"http://localhost:9192/timemachine-0.1/task/"}}]'
 
 	}
 	

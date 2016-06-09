@@ -49,6 +49,8 @@ class HistoryTaskDAO implements IHistoryTaskDAO{
 		_log.info "Task is ${task.toString()}"
 		_log.info "Result is ${result.toString()}"
 		
+		//result =["placeholder":"placeholder"]
+		//result = [server:84, "stats-sum":[["ALL/ALL/ALL":["lastFailureMessage":null,"firstEntryTime":"2016-06-07T11:49:39.518-0400","lastFailureException":null,"successCount":1,"lastSuccessId":"16-10029404","lastFailureTime":null,"lastSuccessTime":"2016-06-07T11:49:39.518-0400","lastFailureId":null,"failureCount":0]]], ok:true]
 		Integer dbSuccess = success?1:0
 		String dbTask = TaskConverter.toJson(task)
 		def json = new JsonBuilder(result)

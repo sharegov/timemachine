@@ -33,9 +33,11 @@ import org.quartz.ScheduleBuilder
 import org.quartz.Scheduler
 import org.quartz.Trigger
 import org.quartz.JobKey
+
 import org.quartz.impl.triggers.*
 
 import org.quartz.ObjectAlreadyExistsException
+import org.quartz.SchedulerException
 
 /**
  * The QuartzTaskFacade is the 'interface' to query Tasks where the scheduler
@@ -164,8 +166,10 @@ class QuartzTaskFacade {
 			//retrieve task from schedule so that all fields are populated (ie:state)
 			return retrieve(task.name, task.group)
 		} catch (ObjectAlreadyExistsException oaee) {
-			//print oaee.printStackTrace()
+			oaee.printStackTrace()
 			task = null
+		} catch (SchedulerException se){
+		    se.printStackTrace()
 		}
 
 		return task

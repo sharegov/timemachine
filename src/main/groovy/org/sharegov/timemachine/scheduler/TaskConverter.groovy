@@ -23,7 +23,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule
 import static org.quartz.TriggerBuilder.*
 import static org.quartz.TriggerKey.*
 import groovy.json.JsonBuilder
-import groovy.json.JsonSlurper
+import groovy.json.JsonSlurperClassic
 
 import org.quartz.JobDataMap
 import org.quartz.JobDetail
@@ -42,7 +42,7 @@ class TaskConverter {
 
 	static Task toTask(String json){
 
-		def slurper = new JsonSlurper()
+		def slurper = new JsonSlurperClassic()
 		def result = slurper.parseText(json)
 
 		// Convert startTime to Date
