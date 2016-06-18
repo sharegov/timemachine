@@ -2,16 +2,21 @@ apply plugin: 'eclipse'
 apply plugin: 'groovy'
 apply plugin: 'java'
 
-tasks.withType(JavaCompile) {
-	options.fork = true
-	//options.forkOptions.executable = '/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home'
-	options.forkOptions.executable = '/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home'
-}
+//tasks.withType(JavaCompile) {
+//	options.fork = true
+//	//options.forkOptions.executable = '/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home'
+//	options.forkOptions.executable = '/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home'
+//}
 //compile.options.fork = true
 //compile.options.forkOptions.executable = '/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home'
 sourceCompatibility = 1.8
 
-version = 1.0
+archivesBaseName = 'timemachine'
+if (project.hasProperty('projVersion')) {
+	project.version = project.projVersion
+  } else {
+	project.version = '1.0.0'
+  }
 
 
 repositories {
@@ -78,12 +83,4 @@ dependencies {
 	 from configurations.runtime
  }
 
-/**
-* Copies the dependencies to the lib directory in preparation for them to be added to a jar file
-*/
-//task copyRuntimeDependencies(dependsOn: configurations.runtime.buildArtifacts, type: Copy){
-//   into('build/output/lib')
-//   from configurations.runtime
-//   from configurations.runtime.allArtifacts*.file
-// }
 
