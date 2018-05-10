@@ -112,7 +112,7 @@ public class CrmJob implements Job {
 
 			switch(httpMethod){
 				case "GET":
-					result = httpService.request(url, null)
+					result = httpService.request(url, query)
 					_log.info("End job execution group/name ${context.jobDetail.group}/${context.jobDetail.name}. http method ${httpMethod} ");
 					break
 				
