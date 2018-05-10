@@ -110,7 +110,7 @@ public class CrmJob implements Job {
 			}
 			else {
 				query = task.restCall?.content;
-				_log.debug("NO contentIsTask ${query}  /   ${task.restCall}");
+				_log.debug("NOOOOO contentIsTask ${query}  /   ${task.restCall}");
 			}
 
 			switch(httpMethod){
