@@ -104,11 +104,14 @@ public class CrmJob implements Job {
 			//contentIsTask: false should be the default
 			Map query = [:]
 			Map result = [:]
-			if(task.restCall?.contentIsTask)				
-				query = [schedule:TaskConverter.covertToMap(task)]
-			else	
-				query = task.restCall?.content
-				
+			if(task.restCall?.contentIsTask) {
+				query = [schedule: TaskConverter.covertToMap(task)]
+				_log.debug("contentIsTask ${query}");
+			}
+			else {
+				query = task.restCall?.content;
+				_log.debug("NO contentIsTask ${query}  /   ${task.restCall}");
+			}
 
 			switch(httpMethod){
 				case "GET":
